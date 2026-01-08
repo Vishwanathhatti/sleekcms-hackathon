@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# SleekCMS Client Usage Guide
 
-## Getting Started
+This project uses `@sleekcms/client` to fetch content from SleekCMS.
 
-First, run the development server:
+## 1. Installation
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install @sleekcms/client
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 2. Configuration (`lib/sleekcms.js`)
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+We use `createClient` to initialize the CMS client. Note that `createClient` returns a **Promise** that resolves to the client object.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```javascript
+// lib/sleekcms.js
+import { createClient } from '@sleekcms/client';
 
-## Learn More
+// Pass configuration options
+const clientPromise = createClient({
+  siteToken: process.env.NEXT_PUBLIC_SLEEKCMS_PUBLIC_TOKEN, 
+  env: 'latest',      // environment alias
+  cdn: true,          // use CDN
+});
 
-To learn more about Next.js, take a look at the following resources:
+// Export the Promise
+export const sleekClient = clientPromise;
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 3. Fetching Content
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Since `sleekClient` is a Promise, you must `await` it before you can call methods like `getContent()`.
 
-## Deploy on Vercel
+### Example: `app/page.js`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```javascript
+import { sleekClient } from "@/lib/sleekcms";
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+export default async function Home() {
+    let data;
+    try {
+        // 1. Await the client initialization
+        const client = await sleekClient;
+        
+        // 2. Fetch content using getContent()
+        data = await client.getContent();
+        
+    } catch (error) {
+        console.error("Failed to fetch data:", error);
+    }
+    
+    // ... use data in your component
+}
+```
+
+### Example: `app/layout.js` (Metadata)
+
+```javascript
+import { sleekClient } from "@/lib/sleekcms";
+
+export async function generateMetadata() {
+  try {
+    const client = await sleekClient;
+    const data = await client.getContent();
+    
+    return {
+       title: data?.title || "My Site",
+       // ...
+    };
+  } catch (error) {
+    return { title: "Fallback Title" };
+  }
+}
+```
+
+## 4. Troubleshooting
+
+- **`sleekClient.getContent is not a function`**: This usually means you tried to call `getContent()` on the `sleekClient` PROMISE instead of awaiting it first.
+- **`ReferenceError: createClient is not defined`**: Ensure you are importing `{ createClient }` from `@sleekcms/client`.
