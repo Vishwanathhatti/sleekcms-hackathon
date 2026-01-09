@@ -15,8 +15,7 @@ export default async function Home() {
     // If this fails, the slug might need to be adjusted.
     let data;
     try {
-        const client = await sleekClient;
-        data = await client.getContent();
+        data = await sleekClient.getContent();
     } catch (error) {
         console.error("Failed to fetch data:", error);
         // Fallback or error UI could handle this

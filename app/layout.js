@@ -17,8 +17,7 @@ import { sleekClient } from "@/lib/sleekcms";
 export async function generateMetadata() {
   let data;
   try {
-    const client = await sleekClient;
-    data = await client.getContent();
+    data = await sleekClient.getContent();
   } catch (error) {
     console.error("Failed to fetch metadata:", error);
     // Fallback metadata
